@@ -95,7 +95,7 @@ function SignupPage() {
     try {
       const payload = isCompany
         ? { email, password, firstName, lastName, phone, companyName: companyName.trim(), accountType: 'company' }
-        : { username, email, password, accountType: 'personal' };
+        : { username, email, password };
 
       const response = await axios.post('/auth/signup', payload);
       login(response.data.user, response.data.accessToken);
