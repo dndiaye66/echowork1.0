@@ -385,6 +385,7 @@ export class AdminService {
           phone: true,
           role: true,
           isVerified: true,
+          isBlocked: true,
           createdAt: true,
           updatedAt: true,
           _count: {
@@ -1086,6 +1087,82 @@ export class AdminService {
     } catch (error) {
       this.logger.error('Failed to fetch top categories', error);
       throw new InternalServerErrorException('Failed to fetch top categories');
+    }
+  }
+
+  // ===== ANALYTICS OVERVIEW =====
+
+  async getAnalyticsOverview() {
+    try {
+      const now = new Date();
+      const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      const reviewInclude = {
+        user: { select: { id: true, username: true } },
+        company: { select: { id: true, name: true, slug: true } },
+      };
+
+      const [
+        totalCompanies,
+        totalUsers,
+        totalReviews,
+        reviewsLast24h,
+        recentReviews,
+        topLiked,
+        topDisliked,
+      ] = await Promise.all([
+        this.prisma.company.count(),
+        this.prisma.user.count(),
+        this.prisma.review.count(),
+        this.prisma.review.count({ where: { createdAt: { gte: last24h } } }),
+        this.prisma.review.findMany({
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          include: reviewInclude,
+        }),
+        this.prisma.review.findMany({
+          take: 10,
+          orderBy: { upvotes: 'desc' },
+          where: { upvotes: { gt: 0 } },
+          include: reviewInclude,
+        }),
+        this.prisma.review.findMany({
+          take: 10,
+          orderBy: { downvotes: 'desc' },
+          where: { downvotes: { gt: 0 } },
+          include: reviewInclude,
+        }),
+      ]);
+
+      return {
+        kpis: { totalCompanies, totalUsers, totalReviews, reviewsLast24h },
+        recentReviews,
+        topLiked,
+        topDisliked,
+      };
+    } catch (error) {
+      this.logger.error('Failed to fetch analytics overview', error);
+      throw new InternalServerErrorException('Failed to fetch analytics overview');
+    }
+  }
+
+  async blockUser(id: number) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { id } });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      return await this.prisma.user.update({
+        where: { id },
+        data: { isBlocked: !user.isBlocked },
+        select: { id: true, username: true, email: true, isBlocked: true },
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      this.logger.error(`Failed to block/unblock user ${id}`, error);
+      throw new InternalServerErrorException('Failed to block/unblock user');
     }
   }
 

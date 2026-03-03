@@ -6,48 +6,99 @@ import {
   Users,
   Building2,
   MessageSquare,
+  Clock,
+  ThumbsUp,
+  ThumbsDown,
   Star,
-  Award,
   Download,
 } from 'lucide-react';
 
-// Chart display constants
-const BAR_WIDTH_MULTIPLIER = 20;
-const MAX_BAR_WIDTH = 200;
-const CATEGORY_BAR_MULTIPLIER = 10;
+function StarRow({ rating }) {
+  return (
+    <span className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          size={12}
+          className={s <= rating ? 'text-red-500 fill-red-500' : 'text-gray-200 fill-gray-200'}
+        />
+      ))}
+    </span>
+  );
+}
+
+function KpiCard({ icon: Icon, label, value, color }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
+        <Icon size={22} className="text-white" />
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-2xl font-bold text-gray-900">{value ?? '—'}</p>
+      </div>
+    </div>
+  );
+}
+
+function ReviewTable({ reviews, emptyMsg }) {
+  if (!reviews?.length) {
+    return <p className="text-sm text-gray-400 py-4 text-center">{emptyMsg}</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-100 text-left text-gray-500 text-xs uppercase">
+            <th className="pb-2 pr-3 font-medium">Utilisateur</th>
+            <th className="pb-2 pr-3 font-medium">Entreprise</th>
+            <th className="pb-2 pr-3 font-medium">Note</th>
+            <th className="pb-2 pr-3 font-medium">Commentaire</th>
+            <th className="pb-2 pr-3 font-medium">👍 / 👎</th>
+          </tr>
+        </thead>
+        <tbody>
+          {reviews.map((r) => (
+            <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+              <td className="py-2.5 pr-3 font-medium text-gray-800">{r.user?.username}</td>
+              <td className="py-2.5 pr-3 text-gray-600">{r.company?.name}</td>
+              <td className="py-2.5 pr-3">
+                <StarRow rating={r.rating} />
+              </td>
+              <td className="py-2.5 pr-3 text-gray-500 max-w-xs truncate">
+                {r.comment || <span className="italic text-gray-300">—</span>}
+              </td>
+              <td className="py-2.5 pr-3 text-xs text-gray-500 whitespace-nowrap">
+                <span className="text-green-600 font-medium">+{r.upvotes}</span>
+                {' / '}
+                <span className="text-red-500 font-medium">-{r.downvotes}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
-  const [userAnalytics, setUserAnalytics] = useState(null);
-  const [companyAnalytics, setCompanyAnalytics] = useState(null);
-  const [reviewAnalytics, setReviewAnalytics] = useState(null);
-  const [topCompanies, setTopCompanies] = useState([]);
-  const [topCategories, setTopCategories] = useState([]);
-  const [period, setPeriod] = useState('month');
+  const [overview, setOverview] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [period]);
+    fetchOverview();
+  }, []);
 
-  const fetchAnalytics = async () => {
+  const fetchOverview = async () => {
     try {
       setLoading(true);
-      const [users, companies, reviews, topComp, topCat] = await Promise.all([
-        axios.get(`/admin/analytics/users?period=${period}`),
-        axios.get('/admin/analytics/companies'),
-        axios.get('/admin/analytics/reviews'),
-        axios.get('/admin/analytics/top-companies?limit=10'),
-        axios.get('/admin/analytics/top-categories?limit=10'),
-      ]);
-
-      setUserAnalytics(users.data);
-      setCompanyAnalytics(companies.data);
-      setReviewAnalytics(reviews.data);
-      setTopCompanies(topComp.data);
-      setTopCategories(topCat.data);
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
-      alert('Failed to load analytics');
+      setError(null);
+      const { data } = await axios.get('/admin/analytics/overview');
+      setOverview(data);
+    } catch (err) {
+      console.error('Failed to fetch analytics:', err);
+      setError('Impossible de charger les données analytiques.');
     } finally {
       setLoading(false);
     }
@@ -55,36 +106,26 @@ function AnalyticsPage() {
 
   const handleExport = async (type) => {
     try {
-      const response = await axios.get(`/admin/export/${type}`);
-
-      // Convert to CSV
-      if (response.data && response.data.length > 0) {
-        const headers = Object.keys(response.data[0]);
-        const csvContent = [
-          headers.join(','),
-          ...response.data.map((row) =>
-            headers.map((header) => `"${row[header] || ''}"`).join(',')
-          ),
-        ].join('\n');
-
-        // Download file
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${type}-export-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-
-        alert(`${type.charAt(0).toUpperCase() + type.slice(1)} exported successfully`);
-      } else {
-        alert('No data to export');
-      }
-    } catch (error) {
-      console.error(`Failed to export ${type}:`, error);
-      alert(`Failed to export ${type}`);
+      const { data } = await axios.get(`/admin/export/${type}`);
+      if (!data?.length) return;
+      const headers = Object.keys(data[0]);
+      const csv = [
+        headers.join(','),
+        ...data.map((row) =>
+          headers.map((h) => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(',')
+        ),
+      ].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(`Export ${type} failed`, err);
     }
   };
 
@@ -92,309 +133,101 @@ function AnalyticsPage() {
     return (
       <AdminLayout title="Analytiques">
         <div className="flex items-center justify-center h-64">
-          <div className="loading loading-spinner loading-lg"></div>
+          <div className="loading loading-spinner loading-lg text-red-600" />
         </div>
       </AdminLayout>
     );
   }
 
+  if (error) {
+    return (
+      <AdminLayout title="Analytiques">
+        <div className="alert alert-error">{error}</div>
+      </AdminLayout>
+    );
+  }
+
+  const { kpis, recentReviews, topLiked, topDisliked } = overview;
+
   return (
     <AdminLayout title="Analytiques">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold flex items-center gap-2">
-          <TrendingUp size={40} />
-          Analytics &amp; Reports
-        </h1>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
+            <TrendingUp size={20} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Tableau de bord analytique</h1>
+            <p className="text-sm text-gray-500">Vue d'ensemble de la plateforme</p>
+          </div>
+        </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => handleExport('users')}
-            className="btn btn-sm btn-outline gap-2"
-          >
-            <Download size={16} />
-            Users CSV
-          </button>
-          <button
-            onClick={() => handleExport('companies')}
-            className="btn btn-sm btn-outline gap-2"
-          >
-            <Download size={16} />
-            Companies CSV
-          </button>
-          <button
-            onClick={() => handleExport('reviews')}
-            className="btn btn-sm btn-outline gap-2"
-          >
-            <Download size={16} />
-            Reviews CSV
-          </button>
+          {['users', 'companies', 'reviews'].map((type) => (
+            <button
+              key={type}
+              onClick={() => handleExport(type)}
+              className="btn btn-sm btn-outline gap-1 border-gray-200 text-gray-600 hover:border-gray-300"
+            >
+              <Download size={14} />
+              {type === 'users' ? 'Utilisateurs' : type === 'companies' ? 'Entreprises' : 'Avis'}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* User Analytics */}
-      {userAnalytics && (
-        <div className="card bg-base-100 shadow-xl mb-6">
-          <div className="card-body">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="card-title text-2xl flex items-center gap-2">
-                <Users size={24} />
-                User Analytics
-              </h2>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                className="select select-bordered select-sm"
-              >
-                <option value="day">Last 24 Hours</option>
-                <option value="week">Last Week</option>
-                <option value="month">Last Month</option>
-                <option value="all">All Time</option>
-              </select>
-            </div>
-            <div className="stats stats-vertical lg:stats-horizontal shadow">
-              <div className="stat">
-                <div className="stat-title">New Users</div>
-                <div className="stat-value text-primary">{userAnalytics.totalUsers}</div>
-                <div className="stat-desc">In selected period</div>
-              </div>
-            </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        <KpiCard
+          icon={Building2}
+          label="Entreprises"
+          value={kpis.totalCompanies}
+          color="bg-blue-500"
+        />
+        <KpiCard
+          icon={Users}
+          label="Utilisateurs"
+          value={kpis.totalUsers}
+          color="bg-purple-500"
+        />
+        <KpiCard
+          icon={MessageSquare}
+          label="Avis total"
+          value={kpis.totalReviews}
+          color="bg-red-600"
+        />
+        <KpiCard
+          icon={Clock}
+          label="Avis (24 dernières h)"
+          value={kpis.reviewsLast24h}
+          color="bg-amber-500"
+        />
+      </div>
 
-            {/* User registrations chart (simple display) */}
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2">Registrations by Date</h3>
-              <div className="overflow-x-auto">
-                <table className="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Count</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(userAnalytics.usersByDate || {}).map(([date, count]) => (
-                      <tr key={date}>
-                        <td>{date}</td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="bg-primary h-4 rounded"
-                              style={{ width: `${Math.min(count * BAR_WIDTH_MULTIPLIER, MAX_BAR_WIDTH)}px` }}
-                            ></div>
-                            <span className="font-semibold">{count}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Recent Reviews */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+          <MessageSquare size={18} className="text-red-600" />
+          10 derniers avis
+        </h2>
+        <ReviewTable reviews={recentReviews} emptyMsg="Aucun avis pour l'instant." />
+      </div>
 
-      {/* Company Analytics */}
-      {companyAnalytics && (
-        <div className="card bg-base-100 shadow-xl mb-6">
-          <div className="card-body">
-            <h2 className="card-title text-2xl flex items-center gap-2 mb-4">
-              <Building2 size={24} />
-              Company Analytics
-            </h2>
-            <div className="stats stats-vertical lg:stats-horizontal shadow">
-              <div className="stat">
-                <div className="stat-title">Total Companies</div>
-                <div className="stat-value text-secondary">
-                  {companyAnalytics.totalCompanies}
-                </div>
-              </div>
-              <div className="stat">
-                <div className="stat-title">Verified</div>
-                <div className="stat-value text-success">
-                  {companyAnalytics.verifiedCompanies}
-                </div>
-              </div>
-              <div className="stat">
-                <div className="stat-title">Claimed</div>
-                <div className="stat-value text-accent">
-                  {companyAnalytics.claimedCompanies}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2">Companies by Category</h3>
-              <div className="overflow-x-auto">
-                <table className="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th>Count</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {companyAnalytics.companiesByCategory.map((cat) => (
-                      <tr key={cat.id}>
-                        <td>{cat.name}</td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="bg-secondary h-4 rounded"
-                              style={{
-                                width: `${Math.min(cat._count.companies * CATEGORY_BAR_MULTIPLIER, MAX_BAR_WIDTH)}px`,
-                              }}
-                            ></div>
-                            <span className="font-semibold">{cat._count.companies}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Review Analytics */}
-      {reviewAnalytics && (
-        <div className="card bg-base-100 shadow-xl mb-6">
-          <div className="card-body">
-            <h2 className="card-title text-2xl flex items-center gap-2 mb-4">
-              <MessageSquare size={24} />
-              Review Analytics
-            </h2>
-            <div className="stats stats-vertical lg:stats-horizontal shadow">
-              <div className="stat">
-                <div className="stat-title">Total Reviews</div>
-                <div className="stat-value">{reviewAnalytics.totalReviews}</div>
-              </div>
-              <div className="stat">
-                <div className="stat-title">Approved</div>
-                <div className="stat-value text-success">
-                  {reviewAnalytics.approvedReviews}
-                </div>
-              </div>
-              <div className="stat">
-                <div className="stat-title">Pending</div>
-                <div className="stat-value text-warning">
-                  {reviewAnalytics.pendingReviews}
-                </div>
-              </div>
-              <div className="stat">
-                <div className="stat-title">Rejected</div>
-                <div className="stat-value text-error">
-                  {reviewAnalytics.rejectedReviews}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2">Rating Distribution</h3>
-              <div className="space-y-2">
-                {[5, 4, 3, 2, 1].map((rating) => (
-                  <div key={rating} className="flex items-center gap-2">
-                    <span className="w-12 font-semibold">{rating} ⭐</span>
-                    <div className="flex-1 bg-base-200 rounded-full h-6 overflow-hidden">
-                      <div
-                        className="bg-warning h-full flex items-center justify-end pr-2"
-                        style={{
-                          width: `${
-                            reviewAnalytics.totalReviews > 0
-                              ? (reviewAnalytics.ratingDistribution[rating] /
-                                  reviewAnalytics.totalReviews) *
-                                100
-                              : 0
-                          }%`,
-                        }}
-                      >
-                        <span className="text-xs font-semibold text-white">
-                          {reviewAnalytics.ratingDistribution[rating] || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Top Companies and Categories */}
+      {/* Top Liked / Top Disliked */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Companies */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title text-2xl flex items-center gap-2 mb-4">
-              <Award size={24} />
-              Top 10 Companies
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="table table-sm">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Company</th>
-                    <th>Rating</th>
-                    <th>Reviews</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topCompanies.map((company, index) => (
-                    <tr key={company.id}>
-                      <td>{index + 1}</td>
-                      <td>
-                        <div>
-                          <div className="font-semibold">{company.name}</div>
-                          <div className="text-xs text-gray-500">{company.category}</div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-1">
-                          <Star size={14} className="text-warning fill-warning" />
-                          <span className="font-semibold">{company.averageRating}</span>
-                        </div>
-                      </td>
-                      <td>{company.reviewCount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+            <ThumbsUp size={18} className="text-green-600" />
+            Commentaires les plus aimés
+          </h2>
+          <ReviewTable reviews={topLiked} emptyMsg="Aucun avis liké pour l'instant." />
         </div>
-
-        {/* Top Categories */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title text-2xl flex items-center gap-2 mb-4">
-              <TrendingUp size={24} />
-              Top 10 Categories
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="table table-sm">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Category</th>
-                    <th>Companies</th>
-                    <th>Reviews</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topCategories.map((category, index) => (
-                    <tr key={category.id}>
-                      <td>{index + 1}</td>
-                      <td className="font-semibold">{category.name}</td>
-                      <td>{category.totalCompanies}</td>
-                      <td>{category.totalReviews}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+            <ThumbsDown size={18} className="text-red-500" />
+            Commentaires les plus dislikés
+          </h2>
+          <ReviewTable reviews={topDisliked} emptyMsg="Aucun avis disliké pour l'instant." />
         </div>
       </div>
     </AdminLayout>

@@ -67,7 +67,7 @@ export default function CompanyPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [company, setCompany] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -76,7 +76,9 @@ export default function CompanyPage() {
   const [comment, setComment] = useState('');
   const [rating, setRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null);
+  const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | 'updated'
+  const [editMode, setEditMode] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
 
   const { upvote, downvote, votingStates } = useVoting();
 
@@ -89,39 +91,74 @@ export default function CompanyPage() {
         const data = await companyService.getCompanyBySlug(slug);
         if (!cancelled) {
           setCompany(data);
-          setReviews(data.reviews || []);
+          const reviewList = data.reviews || [];
+          setReviews(reviewList);
+          // Check if current user already has a review
+          if (user?.id) {
+            const mine = reviewList.find((r) => r.user?.id === user.id);
+            if (mine) setExistingReview(mine);
+          }
         }
       } catch {
-        if (!cancelled) setError('Entreprise non trouvee');
+        if (!cancelled) setError('Entreprise non trouvée');
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, user?.id]);
 
   const refreshReviews = async () => {
     try {
       const data = await companyService.getCompanyBySlug(slug);
-      setReviews(data.reviews || []);
+      const reviewList = data.reviews || [];
+      setReviews(reviewList);
+      if (user?.id) {
+        const mine = reviewList.find((r) => r.user?.id === user.id);
+        setExistingReview(mine || null);
+      }
     } catch {}
+  };
+
+  const enterEditMode = () => {
+    if (existingReview) {
+      setRating(existingReview.rating);
+      setComment(existingReview.comment || '');
+      setEditMode(true);
+      setSubmitStatus(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) { navigate('/login', { state: { from: location.pathname } }); return; }
-    if (!comment.trim() || rating === 0) return;
+    if (rating === 0) return;
     setSubmitting(true);
     setSubmitStatus(null);
     try {
-      await reviewService.createReview({ companyId: company.id, comment, rating });
+      if (editMode && existingReview) {
+        await reviewService.updateReview(existingReview.id, { rating, comment });
+        setSubmitStatus('updated');
+      } else {
+        await reviewService.createReview({ companyId: company.id, comment, rating });
+        setSubmitStatus('success');
+      }
+      setEditMode(false);
       setComment('');
       setRating(0);
-      setSubmitStatus('success');
       await refreshReviews();
       setTimeout(() => setSubmitStatus(null), 4000);
     } catch (err) {
       if (err.response?.status === 401) { navigate('/login', { state: { from: location.pathname } }); return; }
+      if (err.response?.status === 409) {
+        // Already reviewed — switch to edit mode
+        const reviewId = err.response.data?.reviewId;
+        if (reviewId) {
+          const mine = reviews.find((r) => r.id === reviewId) || existingReview;
+          if (mine) { setExistingReview(mine); enterEditMode(); }
+        }
+        return;
+      }
       setSubmitStatus('error');
     } finally {
       setSubmitting(false);
@@ -303,7 +340,12 @@ export default function CompanyPage() {
                               <p className="font-semibold text-gray-900 text-sm">{review.user?.username || 'Anonyme'}</p>
                               {review.createdAt && (
                                 <p className="text-xs text-gray-400">
-                                  {new Date(review.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                  Posté le {new Date(review.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                </p>
+                              )}
+                              {review.user?.createdAt && (
+                                <p className="text-xs text-gray-300">
+                                  Membre depuis {new Date(review.user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
                                 </p>
                               )}
                             </div>
@@ -342,7 +384,7 @@ export default function CompanyPage() {
             {/* Sidebar */}
             <div className="space-y-4 md:space-y-5 order-1 lg:order-2">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-base font-bold text-gray-900 mb-5">Votre avis</h2>
+                <h2 className="text-base font-bold text-gray-900 mb-1">Votre avis</h2>
 
                 {!isAuthenticated ? (
                   <div className="text-center py-4">
@@ -354,22 +396,52 @@ export default function CompanyPage() {
                       Se connecter
                     </Link>
                     <Link to="/signup" className="block mt-2 w-full py-2.5 text-center text-sm font-semibold text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
-                      Creer un compte
+                      Créer un compte
                     </Link>
                   </div>
+                ) : existingReview && !editMode ? (
+                  /* Already reviewed — show existing review summary */
+                  <div>
+                    <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5 mb-4 mt-3">
+                      <CheckCircle size={14} className="text-green-600 shrink-0" />
+                      <p className="text-sm text-green-700 font-medium">Vous avez déjà noté cette entreprise</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <StarDisplay rating={existingReview.rating} size={16} />
+                        <span className="text-sm font-bold text-gray-700">{existingReview.rating}/5</span>
+                      </div>
+                      {existingReview.comment && (
+                        <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">{existingReview.comment}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={enterEditMode}
+                      className="w-full py-2.5 border border-red-300 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50 transition-colors"
+                    >
+                      Modifier mon avis
+                    </button>
+                  </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                    {editMode && (
+                      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700 font-medium">
+                        <AlertCircle size={13} /> Modification de votre avis existant
+                      </div>
+                    )}
                     <div>
                       <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-2">Votre note</label>
                       <StarPicker rating={rating} onRate={setRating} />
                       {rating === 0 && <p className="text-xs text-gray-300 mt-1">Cliquez pour noter</p>}
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-2">Commentaire</label>
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-2">
+                        Commentaire <span className="text-gray-300 font-normal normal-case">(optionnel)</span>
+                      </label>
                       <textarea
                         rows={4}
                         className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none"
-                        placeholder="Partagez votre experience avec cette entreprise..."
+                        placeholder="Partagez votre expérience avec cette entreprise..."
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         maxLength={500}
@@ -378,7 +450,12 @@ export default function CompanyPage() {
                     </div>
                     {submitStatus === 'success' && (
                       <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
-                        <CheckCircle size={14} /> Avis publie avec succes !
+                        <CheckCircle size={14} /> Avis publié avec succès !
+                      </div>
+                    )}
+                    {submitStatus === 'updated' && (
+                      <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5">
+                        <CheckCircle size={14} /> Avis modifié avec succès !
                       </div>
                     )}
                     {submitStatus === 'error' && (
@@ -386,17 +463,29 @@ export default function CompanyPage() {
                         <AlertCircle size={14} /> Erreur lors de la publication.
                       </div>
                     )}
-                    <button
-                      type="submit"
-                      disabled={submitting || rating === 0 || !comment.trim()}
-                      className="w-full py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {submitting ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <span className="loading loading-spinner loading-xs" /> Publication...
-                        </span>
-                      ) : 'Publier mon avis'}
-                    </button>
+                    <div className="flex gap-2">
+                      {editMode && (
+                        <button
+                          type="button"
+                          onClick={() => { setEditMode(false); setRating(0); setComment(''); }}
+                          className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+                        >
+                          Annuler
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={submitting || rating === 0}
+                        className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {submitting ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <span className="loading loading-spinner loading-xs" />
+                            {editMode ? 'Modification...' : 'Publication...'}
+                          </span>
+                        ) : editMode ? 'Enregistrer' : 'Publier mon avis'}
+                      </button>
+                    </div>
                   </form>
                 )}
               </div>

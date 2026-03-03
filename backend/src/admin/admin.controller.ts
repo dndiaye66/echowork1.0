@@ -199,6 +199,16 @@ export class AdminController {
 
   // ===== ANALYTICS AND REPORTS =====
 
+  @Get('analytics/overview')
+  async getAnalyticsOverview() {
+    return this.adminService.getAnalyticsOverview();
+  }
+
+  @Patch('users/:id/block')
+  async blockUser(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.blockUser(id);
+  }
+
   @Get('analytics/users')
   async getUserAnalytics(@Query('period') period?: string) {
     return this.adminService.getUserAnalytics(period);

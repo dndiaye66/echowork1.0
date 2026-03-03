@@ -168,4 +168,63 @@ export class AuthService {
 
     return user;
   }
+
+  /**
+   * Google OAuth login/signup
+   */
+  async googleLogin(profile: any) {
+    const googleId: string = profile.id;
+    const email: string = profile.emails?.[0]?.value;
+    const displayName: string = profile.displayName || '';
+
+    // 1. Try to find user by googleId
+    let user = await this.prisma.user.findUnique({ where: { googleId } });
+
+    if (!user) {
+      // 2. Try to find by email and link account
+      user = await this.prisma.user.findUnique({ where: { email } });
+
+      if (user) {
+        // Link Google account to existing user
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { googleId, isVerified: true },
+        });
+      } else {
+        // 3. Create new user from Google profile
+        const base = displayName
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]/g, '.')
+          .replace(/\.+/g, '.')
+          .replace(/^\.+|\.+$/g, '') || 'user';
+
+        const username = await this.generateUniqueUsername(base);
+
+        user = await this.prisma.user.create({
+          data: {
+            username,
+            email,
+            googleId,
+            password: '',
+            isVerified: true,
+          },
+        });
+
+        // Send welcome email (async)
+        this.emailService.sendWelcomeEmail(email, username).catch((err) => {
+          this.logger.error('Failed to send welcome email', err);
+        });
+      }
+    }
+
+    const payload = { sub: user.id, username: user.username, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: { id: user.id, username: user.username, email: user.email, role: user.role },
+    };
+  }
 }

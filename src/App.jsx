@@ -16,6 +16,7 @@ import UsersManagement from "./pages/admin/UsersManagement";
 import ReviewsModeration from "./pages/admin/ReviewsModeration";
 import CategoriesManagement from "./pages/admin/CategoriesManagement";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/companies/:slug" element={<CompanyPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* ── Admin (ADMIN role only) ── */}
           <Route

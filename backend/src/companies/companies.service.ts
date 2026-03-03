@@ -220,6 +220,7 @@ export class CompaniesService {
                 select: {
                   id: true,
                   username: true,
+                  createdAt: true,
                 },
               },
             },

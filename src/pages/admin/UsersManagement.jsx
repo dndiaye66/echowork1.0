@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from '../../api/Config';
 import AdminLayout from '../../components/AdminLayout';
-import { Users, Shield, Trash2, Edit2, Key, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { Users, Shield, Trash2, Edit2, Key, CheckCircle, XCircle, Filter, Lock, Unlock } from 'lucide-react';
 
 function UsersManagement() {
   const { user } = useAuth();
@@ -105,6 +105,19 @@ function UsersManagement() {
     } catch (error) {
       console.error('Failed to deactivate user:', error);
       alert(error.response?.data?.message || 'Failed to deactivate user');
+    }
+  };
+
+  const handleBlock = async (userId, currentlyBlocked) => {
+    const action = currentlyBlocked ? 'débloquer' : 'bloquer';
+    if (!confirm(`Voulez-vous ${action} cet utilisateur ?`)) return;
+
+    try {
+      await axios.patch(`/admin/users/${userId}/block`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Failed to block/unblock user:', error);
+      alert(error.response?.data?.message || 'Échec de l\'opération');
     }
   };
 
@@ -274,6 +287,7 @@ function UsersManagement() {
                   <th>Phone</th>
                   <th>Role</th>
                   <th>Verified</th>
+                  <th>Bloqué</th>
                   <th>Reviews</th>
                   <th>Claimed Companies</th>
                   <th>Joined</th>
@@ -308,6 +322,13 @@ function UsersManagement() {
                         <div className="badge badge-success">✓</div>
                       ) : (
                         <div className="badge badge-warning">✗</div>
+                      )}
+                    </td>
+                    <td>
+                      {userItem.isBlocked ? (
+                        <div className="badge badge-error">Bloqué</div>
+                      ) : (
+                        <div className="badge badge-ghost">Non</div>
                       )}
                     </td>
                     <td>
@@ -358,6 +379,14 @@ function UsersManagement() {
                             <CheckCircle size={14} />
                           </button>
                         )}
+                        <button
+                          className={`btn btn-xs btn-ghost ${userItem.isBlocked ? 'text-green-600' : 'text-orange-500'}`}
+                          onClick={() => handleBlock(userItem.id, userItem.isBlocked)}
+                          disabled={userItem.id === user?.id}
+                          title={userItem.isBlocked ? 'Débloquer' : 'Bloquer'}
+                        >
+                          {userItem.isBlocked ? <Unlock size={14} /> : <Lock size={14} />}
+                        </button>
                         <button
                           className="btn btn-xs btn-error"
                           onClick={() => handleDelete(userItem.id)}
