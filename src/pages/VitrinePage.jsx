@@ -35,26 +35,53 @@ const categoryIconMap = {
   'informatique-et-numerique': { Icon: Monitor, bg: 'bg-blue-100', color: 'text-blue-700' },
 };
 
+/* ── Rating utilities ── */
+function roundToHalf(val) {
+  return Math.round(val * 2) / 2;
+}
+
+function getRatingInfo(avg) {
+  if (!avg || avg === 0) return null;
+  if (avg < 1.5)  return { label: 'Mauvais',    color: 'bg-red-100 text-red-700' };
+  if (avg < 2.5)  return { label: 'Médiocre',   color: 'bg-orange-100 text-orange-700' };
+  if (avg < 3.5)  return { label: 'Moyen',      color: 'bg-yellow-100 text-yellow-700' };
+  if (avg < 4.5)  return { label: 'Bon',        color: 'bg-green-100 text-green-700' };
+  return           { label: 'Excellent',  color: 'bg-emerald-100 text-emerald-700' };
+}
+
 function StarRating({ rating, size = 14 }) {
+  const rounded = roundToHalf(rating);
   return (
     <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          size={size}
-          className={i <= Math.round(rating) ? 'fill-red-500 text-red-500' : 'fill-gray-200 text-gray-200'}
-        />
-      ))}
+      {[1, 2, 3, 4, 5].map((i) => {
+        const full = i <= Math.floor(rounded);
+        const half = !full && i - 0.5 === rounded;
+        return (
+          <span key={i} className="relative inline-block" style={{ width: size, height: size }}>
+            {/* Empty star base */}
+            <Star size={size} className="fill-gray-200 text-gray-200 absolute inset-0" />
+            {/* Full star */}
+            {full && <Star size={size} className="fill-red-500 text-red-500 absolute inset-0" />}
+            {/* Half star */}
+            {half && (
+              <span className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+                <Star size={size} className="fill-red-500 text-red-500" />
+              </span>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
 
 function CompanyRankCard({ company, rank }) {
   const avg = company.averageRating || company.scores?.globalScore || 0;
+  const info = getRatingInfo(avg);
   return (
     <Link
       to={`/companies/${company.slug}`}
-      className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors group"
+      className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors group"
     >
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
         rank === 1 ? 'bg-yellow-400 text-yellow-900' :
@@ -77,10 +104,24 @@ function CompanyRankCard({ company, rank }) {
         <p className="font-semibold text-gray-900 truncate text-sm group-hover:text-red-600 transition-colors">
           {company.name}
         </p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <StarRating rating={avg} size={12} />
-          {avg > 0 && <span className="text-xs text-gray-400">{Number(avg).toFixed(1)}</span>}
+          {avg > 0 ? (
+            <>
+              <span className="text-xs font-bold text-gray-700">{Number(avg).toFixed(1)}</span>
+              {info && (
+                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${info.color}`}>
+                  {info.label}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-xs text-gray-400 italic">Pas encore noté</span>
+          )}
         </div>
+        {company.reviewCount > 0 && (
+          <p className="text-xs text-gray-400 mt-0.5">{company.reviewCount} avis</p>
+        )}
       </div>
 
       <ChevronRight size={15} className="text-gray-300 group-hover:text-red-400 transition-colors shrink-0" />
