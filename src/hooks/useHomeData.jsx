@@ -18,6 +18,6 @@ export const useActiveAds = () => {
   return useApiData(vitrineService.getActiveAds);
 };
 
-export const useActiveJobOffers = () => {
-  return useApiData(vitrineService.getActiveJobOffers);
+export const useStats = () => {
+  return useApiData(vitrineService.getStats);
 };

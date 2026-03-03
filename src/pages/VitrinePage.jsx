@@ -10,7 +10,7 @@ import {
 import Navbar from '../components/navbar';
 import Foot from '../components/Foot';
 import SearchAutocomplete from '../components/SearchAutocomplete';
-import { useBestCompanies, useWorstCompanies } from '../hooks/useHomeData';
+import { useBestCompanies, useWorstCompanies, useStats } from '../hooks/useHomeData';
 import { useCategories } from '../hooks/useCategory';
 import backgroundImage from '../assets/image/imgbackground.jpg';
 
@@ -207,8 +207,16 @@ export default function VitrinePage() {
   const { data: companies, loading, error } = useBestCompanies();
   const { data: worstCompanies, loading: worstLoading } = useWorstCompanies();
   const { categories, loading: catLoading } = useCategories();
+  const { data: stats } = useStats();
   const jobs = [];
   const hasJobs = false;
+
+  function formatCount(n) {
+    if (!n) return '—';
+    if (n >= 1000) return `${Math.floor(n / 100) * 100}+`;
+    if (n >= 100)  return `${Math.floor(n / 10) * 10}+`;
+    return `${n}`;
+  }
 
   return (
     <>
@@ -242,17 +250,17 @@ export default function VitrinePage() {
 
           <div className="flex items-center justify-center gap-10 mt-12">
             <div className="text-center">
-              <p className="text-3xl font-black">{companies?.length ? `${companies.length}+` : '100+'}</p>
+              <p className="text-3xl font-black">{formatCount(stats?.companyCount)}</p>
               <p className="text-xs text-white/55 uppercase tracking-widest mt-1">Entreprises</p>
             </div>
             <div className="w-px h-10 bg-white/20" />
             <div className="text-center">
-              <p className="text-3xl font-black">{categories?.length ? `${categories.length}+` : '12+'}</p>
+              <p className="text-3xl font-black">{formatCount(stats?.categoryCount)}</p>
               <p className="text-xs text-white/55 uppercase tracking-widest mt-1">Catégories</p>
             </div>
             <div className="w-px h-10 bg-white/20" />
             <div className="text-center">
-              <p className="text-3xl font-black">500+</p>
+              <p className="text-3xl font-black">{stats?.reviewCount > 0 ? formatCount(stats.reviewCount) : '0'}</p>
               <p className="text-xs text-white/55 uppercase tracking-widest mt-1">Avis publiés</p>
             </div>
           </div>

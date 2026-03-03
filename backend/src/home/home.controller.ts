@@ -1,12 +1,16 @@
 import { Controller, Get } from '@nestjs/common';
 import { CompaniesService } from '../companies/companies.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Controller handling home page endpoints
  */
 @Controller('home')
 export class HomeController {
-  constructor(private readonly companiesService: CompaniesService) {}
+  constructor(
+    private readonly companiesService: CompaniesService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /**
    * GET /api/home/best-companies
@@ -26,5 +30,19 @@ export class HomeController {
   @Get('worst-companies')
   async getWorstCompanies() {
     return this.companiesService.findWorstCompanies();
+  }
+
+  /**
+   * GET /api/home/stats
+   * Returns platform-wide counts for the hero section
+   */
+  @Get('stats')
+  async getStats() {
+    const [companyCount, categoryCount, reviewCount] = await Promise.all([
+      this.prisma.company.count(),
+      this.prisma.category.count(),
+      this.prisma.review.count(),
+    ]);
+    return { companyCount, categoryCount, reviewCount };
   }
 }

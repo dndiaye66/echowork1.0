@@ -41,12 +41,12 @@ export const vitrineService = {
     }
   },
 
-  getActiveJobOffers: async () => {
+  getStats: async () => {
     try {
-      const res = await apiClient.get('/job-offers/active');
+      const res = await apiClient.get('/home/stats');
       return res.data;
     } catch {
-      return [];
+      return { companyCount: 0, categoryCount: 0, reviewCount: 0 };
     }
   },
 };
