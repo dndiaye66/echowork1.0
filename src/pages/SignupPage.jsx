@@ -1,11 +1,97 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../api/Config';
 import {
   Eye, EyeOff, User, Mail, Lock, CheckCircle2, ArrowRight,
-  Star, Building2, UserCircle2, Phone,
+  Star, Building2, UserCircle2, Phone, Sparkles, PartyPopper,
 } from 'lucide-react';
+
+/* ── Welcome modal shown after successful signup ── */
+function WelcomeModal({ username, onClose }) {
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) { clearInterval(timer); onClose(); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Modal card */}
+      <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-[fadeInScale_0.4s_ease-out]">
+
+        {/* Red gradient top */}
+        <div className="bg-gradient-to-br from-red-600 to-red-700 px-8 pt-10 pb-16 text-center text-white relative overflow-hidden">
+          {/* Decorative circles */}
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10" />
+          <div className="absolute -bottom-4 -left-6 w-24 h-24 rounded-full bg-white/10" />
+
+          {/* Star icon */}
+          <div className="relative z-10 flex justify-center mb-4">
+            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center border border-white/30 shadow-xl">
+              <Star size={40} className="text-white" fill="currentColor" />
+            </div>
+          </div>
+
+          <h2 className="relative z-10 text-3xl font-extrabold mb-1">Bienvenue !</h2>
+          <p className="relative z-10 text-white/80 text-lg">
+            Content de t'avoir avec nous, <span className="font-bold text-white">@{username}</span> 🎉
+          </p>
+        </div>
+
+        {/* White bottom content */}
+        <div className="px-8 py-6 -mt-8 relative">
+          <div className="bg-white rounded-2xl shadow-lg p-5 mb-5">
+            <p className="text-gray-700 text-sm leading-relaxed text-center">
+              Ton compte EchoWork est prêt. Tu peux maintenant noter des entreprises,
+              partager tes expériences et aider des milliers de Sénégalais à faire
+              les meilleurs choix.
+            </p>
+          </div>
+
+          {/* Features */}
+          <ul className="space-y-2 mb-6">
+            {[
+              'Donne ton avis sur les entreprises',
+              'Consulte des milliers d\'avis vérifiés',
+              'Découvre les meilleures entreprises',
+            ].map((feat) => (
+              <li key={feat} className="flex items-center gap-2 text-sm text-gray-600">
+                <CheckCircle2 size={16} className="text-red-500 shrink-0" />
+                {feat}
+              </li>
+            ))}
+          </ul>
+
+          <button
+            onClick={onClose}
+            className="btn btn-primary w-full gap-2 rounded-xl"
+          >
+            <Sparkles size={16} />
+            Commencer à explorer
+            <span className="ml-auto bg-white/20 rounded-full text-xs px-2 py-0.5">{countdown}s</span>
+          </button>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: scale(0.85) translateY(20px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 function PasswordStrength({ password }) {
   const checks = [
@@ -58,6 +144,7 @@ function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [welcomeUser, setWelcomeUser] = useState(null);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -99,7 +186,7 @@ function SignupPage() {
 
       const response = await axios.post('/auth/signup', payload);
       login(response.data.user, response.data.accessToken);
-      navigate('/');
+      setWelcomeUser(response.data.user.username);
     } catch (err) {
       setError(err.response?.data?.message || 'Inscription échouée. Veuillez réessayer.');
     } finally {
@@ -129,6 +216,10 @@ function SignupPage() {
       };
 
   return (
+    <>
+    {welcomeUser && (
+      <WelcomeModal username={welcomeUser} onClose={() => navigate('/')} />
+    )}
     <div className="min-h-screen flex">
 
       {/* ── Left panel (branding) ── */}
@@ -365,6 +456,7 @@ function SignupPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
