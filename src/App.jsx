@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import InstallPrompt from "./components/InstallPrompt";
+import BottomNav from "./components/BottomNav";
 import CategoryPage from "./pages/CategoryPage";
 import VitrinePage from "./pages/VitrinePage";
 import CompanyPage from "./pages/CompanyPage";
@@ -94,6 +95,7 @@ function App() {
             }
           />
         </Routes>
+        <BottomNav />
       </Router>
       <InstallPrompt />
     </AuthProvider>

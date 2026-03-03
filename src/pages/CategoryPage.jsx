@@ -92,23 +92,23 @@ export default function CategoryPage() {
       <Navbar />
 
       {/* Category header */}
-      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-10 px-4">
+      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-7 md:py-10 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-1.5 text-xs text-white/40 mb-4">
+          <div className="flex items-center gap-1.5 text-xs text-white/40 mb-3">
             <Link to="/" className="hover:text-white/80 transition-colors">Accueil</Link>
             <ChevronRight size={11} />
             <span className="text-white">{currentCategory?.name || slug?.replace(/-/g, ' ')}</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
-              <CatIcon size={26} className="text-white" />
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+              <CatIcon size={22} className="text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-black capitalize">
+              <h1 className="text-2xl md:text-3xl font-black capitalize">
                 {currentCategory?.name || slug?.replace(/-/g, ' ')}
               </h1>
-              <p className="text-white/55 text-sm mt-1">
-                {companies.length} entreprise{companies.length !== 1 ? 's' : ''} au Senegal
+              <p className="text-white/55 text-xs md:text-sm mt-0.5">
+                {companies.length} entreprise{companies.length !== 1 ? 's' : ''} au Sénégal
               </p>
             </div>
           </div>
@@ -193,28 +193,28 @@ export default function CategoryPage() {
               {displayed.length === 0 ? (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 py-16 text-center">
                   <Building2 size={40} className="text-gray-200 mx-auto mb-3" />
-                  <p className="text-gray-400 font-medium">Aucune entreprise trouvee</p>
+                  <p className="text-gray-400 font-medium">Aucune entreprise trouvée</p>
                   {(search || ratingFilter) && (
                     <button
                       className="mt-3 text-sm text-red-600 hover:underline"
                       onClick={() => { setSearch(''); setRatingFilter(''); }}
                     >
-                      Reinitialiser les filtres
+                      Réinitialiser les filtres
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {displayed.map((company, i) => {
                     const avg = company.averageRating || 0;
                     return (
                       <Link
                         key={company.slug}
                         to={`/companies/${company.slug}`}
-                        className="flex items-center gap-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-red-200 transition-all duration-200 group"
+                        className="flex items-center gap-3 md:gap-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-3.5 md:p-5 hover:shadow-md hover:border-red-200 active:scale-[0.99] transition-all duration-200 group"
                       >
                         {/* Rank badge */}
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                        <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
                           i === 0 ? 'bg-yellow-400 text-yellow-900' :
                           i === 1 ? 'bg-gray-300 text-gray-700' :
                           i === 2 ? 'bg-amber-600/70 text-white' :
@@ -228,37 +228,34 @@ export default function CategoryPage() {
                           <img
                             src={company.imageUrl}
                             alt={company.name}
-                            className="w-14 h-14 rounded-xl object-cover bg-gray-100 shrink-0"
+                            className="w-11 h-11 md:w-14 md:h-14 rounded-xl object-cover bg-gray-100 shrink-0"
                           />
                         ) : (
-                          <div className="w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-                            <Building2 size={22} className="text-red-400" />
+                          <div className="w-11 h-11 md:w-14 md:h-14 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                            <Building2 size={18} className="text-red-400" />
                           </div>
                         )}
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <h2 className="font-bold text-gray-900 text-base group-hover:text-red-600 transition-colors leading-snug">
+                          <h2 className="font-bold text-gray-900 text-sm md:text-base group-hover:text-red-600 transition-colors leading-snug truncate">
                             {company.name}
                           </h2>
-                          <div className="flex items-center gap-2 mt-1">
-                            <StarDisplay rating={avg} />
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <StarDisplay rating={avg} size={11} />
                             {avg > 0 && (
-                              <span className="text-xs text-gray-400">{Number(avg).toFixed(1)}/5</span>
+                              <span className="text-xs text-gray-400">{Number(avg).toFixed(1)}</span>
                             )}
                           </div>
-                          {company.description && (
-                            <p className="text-sm text-gray-400 mt-1 line-clamp-1 leading-snug">{company.description}</p>
-                          )}
                           {(company.ville || company.adresse) && (
-                            <div className="flex items-center gap-1 text-xs text-gray-300 mt-1">
-                              <MapPin size={10} />
+                            <div className="flex items-center gap-1 text-[10px] text-gray-300 mt-0.5">
+                              <MapPin size={9} />
                               {company.ville || company.adresse}
                             </div>
                           )}
                         </div>
 
-                        <ChevronRight size={16} className="text-gray-300 group-hover:text-red-400 transition-colors shrink-0" />
+                        <ChevronRight size={15} className="text-gray-300 group-hover:text-red-400 transition-colors shrink-0" />
                       </Link>
                     );
                   })}
@@ -281,6 +278,7 @@ export default function CategoryPage() {
         </div>
       </div>
 
+      <div className="md:hidden h-20" />
       <Foot />
     </>
   );

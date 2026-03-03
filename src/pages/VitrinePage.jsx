@@ -224,90 +224,116 @@ export default function VitrinePage() {
 
       {/* ─── Hero ─────────────────────────────────────────────────────────────── */}
       <section
-        className="relative min-h-[75vh] flex items-center justify-center text-white"
+        className="relative min-h-[55vh] md:min-h-[75vh] flex items-center justify-center text-white"
         style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/55 to-black/70" />
 
-        <div className="relative z-10 w-full max-w-3xl mx-auto px-4 py-24 text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm mb-7">
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+        <div className="relative z-10 w-full max-w-3xl mx-auto px-4 py-10 md:py-24 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1 text-xs md:text-sm mb-4 md:mb-7">
+            <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full animate-pulse" />
             La plateforme de confiance au Sénégal
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-black leading-tight mb-4">
+          <h1 className="text-3xl md:text-6xl font-black leading-tight mb-3 md:mb-4">
             La voix des{' '}
             <span className="text-red-500">Sénégalais</span>
           </h1>
-          <p className="text-lg md:text-xl text-white/75 mb-10 max-w-xl mx-auto leading-relaxed">
+          <p className="hidden md:block text-lg md:text-xl text-white/75 mb-10 max-w-xl mx-auto leading-relaxed">
             Notez les entreprises, partagez vos expériences et aidez la communauté
             à faire les meilleurs choix.
+          </p>
+          <p className="md:hidden text-sm text-white/70 mb-6 max-w-xs mx-auto leading-relaxed">
+            Notez et découvrez les entreprises sénégalaises
           </p>
 
           <div className="max-w-lg mx-auto">
             <SearchAutocomplete placeholder="Rechercher une entreprise..." />
           </div>
 
-          <div className="flex items-center justify-center gap-10 mt-12">
+          <div className="flex items-center justify-center gap-6 md:gap-10 mt-8 md:mt-12">
             <div className="text-center">
-              <p className="text-3xl font-black">{formatCount(stats?.companyCount)}</p>
-              <p className="text-xs text-white/55 uppercase tracking-widest mt-1">Entreprises</p>
+              <p className="text-2xl md:text-3xl font-black">{formatCount(stats?.companyCount)}</p>
+              <p className="text-[10px] md:text-xs text-white/55 uppercase tracking-widest mt-1">Entreprises</p>
             </div>
-            <div className="w-px h-10 bg-white/20" />
+            <div className="w-px h-8 md:h-10 bg-white/20" />
             <div className="text-center">
-              <p className="text-3xl font-black">{formatCount(stats?.categoryCount)}</p>
-              <p className="text-xs text-white/55 uppercase tracking-widest mt-1">Catégories</p>
+              <p className="text-2xl md:text-3xl font-black">{formatCount(stats?.categoryCount)}</p>
+              <p className="text-[10px] md:text-xs text-white/55 uppercase tracking-widest mt-1">Catégories</p>
             </div>
-            <div className="w-px h-10 bg-white/20" />
+            <div className="w-px h-8 md:h-10 bg-white/20" />
             <div className="text-center">
-              <p className="text-3xl font-black">{stats?.reviewCount > 0 ? formatCount(stats.reviewCount) : '0'}</p>
-              <p className="text-xs text-white/55 uppercase tracking-widest mt-1">Avis publiés</p>
+              <p className="text-2xl md:text-3xl font-black">{stats?.reviewCount > 0 ? formatCount(stats.reviewCount) : '0'}</p>
+              <p className="text-[10px] md:text-xs text-white/55 uppercase tracking-widest mt-1">Avis publiés</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* ─── Categories ───────────────────────────────────────────────────────── */}
-      <section className="bg-gray-50 py-16 px-4">
+      <section className="bg-gray-50 py-10 md:py-16">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-black text-gray-900">Explorez par secteur</h2>
-            <p className="text-gray-500 mt-2 text-sm">Trouvez les meilleures entreprises dans chaque domaine d'activité</p>
+          <div className="text-center mb-6 md:mb-10 px-4">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900">Explorez par secteur</h2>
+            <p className="text-gray-500 mt-1.5 text-sm hidden md:block">Trouvez les meilleures entreprises dans chaque domaine d'activité</p>
           </div>
 
           {catLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => <div key={i} className="h-28 rounded-2xl bg-gray-200 animate-pulse" />)}
+            <div className="flex md:grid gap-3 md:gap-4 md:grid-cols-4 overflow-x-auto px-4 pb-2 md:pb-0 scrollbar-hide">
+              {[...Array(8)].map((_, i) => <div key={i} className="h-24 w-28 md:w-auto md:h-28 rounded-2xl bg-gray-200 animate-pulse shrink-0" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {categories?.map((cat) => {
-                const conf = categoryIconMap[cat.slug] || { Icon: Briefcase, bg: 'bg-gray-100', color: 'text-gray-700' };
-                return (
-                  <Link
-                    key={cat.slug}
-                    to={`/categories/${cat.slug}`}
-                    className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-red-200 hover:-translate-y-0.5 transition-all duration-200"
-                  >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${conf.bg}`}>
-                      <conf.Icon size={22} className={conf.color} />
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 text-center leading-tight group-hover:text-red-600 transition-colors">
-                      {cat.name}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
+            <>
+              {/* Mobile: horizontal scroll */}
+              <div className="md:hidden flex gap-3 overflow-x-auto px-4 pb-3 scrollbar-hide">
+                {categories?.map((cat) => {
+                  const conf = categoryIconMap[cat.slug] || { Icon: Briefcase, bg: 'bg-gray-100', color: 'text-gray-700' };
+                  return (
+                    <Link
+                      key={cat.slug}
+                      to={`/categories/${cat.slug}`}
+                      className="group flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm active:scale-95 transition-transform shrink-0 w-24"
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${conf.bg}`}>
+                        <conf.Icon size={18} className={conf.color} />
+                      </div>
+                      <span className="text-[10px] font-semibold text-gray-700 text-center leading-tight">
+                        {cat.name}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+              {/* Desktop: grid */}
+              <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 px-4">
+                {categories?.map((cat) => {
+                  const conf = categoryIconMap[cat.slug] || { Icon: Briefcase, bg: 'bg-gray-100', color: 'text-gray-700' };
+                  return (
+                    <Link
+                      key={cat.slug}
+                      to={`/categories/${cat.slug}`}
+                      className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-red-200 hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${conf.bg}`}>
+                        <conf.Icon size={22} className={conf.color} />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700 text-center leading-tight group-hover:text-red-600 transition-colors">
+                        {cat.name}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </section>
 
       {/* ─── How it works ─────────────────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-10 md:py-16 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-black text-gray-900 mb-2">Comment ça marche ?</h2>
-          <p className="text-gray-400 mb-12 text-sm">Simple, rapide et efficace</p>
+          <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Comment ça marche ?</h2>
+          <p className="text-gray-400 mb-8 md:mb-12 text-sm">Simple, rapide et efficace</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
@@ -335,7 +361,7 @@ export default function VitrinePage() {
       </section>
 
       {/* ─── Rankings ─────────────────────────────────────────────────────────── */}
-      <section className="bg-white py-16 px-4">
+      <section className="bg-white py-10 md:py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
 
@@ -570,6 +596,8 @@ export default function VitrinePage() {
       </section>
 
       <Foot />
+      {/* Espace pour la barre de navigation mobile */}
+      <div className="md:hidden h-16" />
     </>
   );
 }

@@ -153,13 +153,6 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            className="md:hidden ml-auto p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
 
         {/* Mobile search */}

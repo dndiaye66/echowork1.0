@@ -181,8 +181,8 @@ export default function CompanyPage() {
 
       {/* Company header */}
       <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-12">
-          <div className="flex items-center gap-1.5 text-xs text-white/40 mb-6">
+        <div className="max-w-6xl mx-auto px-4 py-7 md:py-12">
+          <div className="flex items-center gap-1.5 text-xs text-white/40 mb-4 md:mb-6">
             <Link to="/" className="hover:text-white/80 transition-colors">Accueil</Link>
             <ChevronRight size={11} />
             {company.category && (
@@ -193,65 +193,59 @@ export default function CompanyPage() {
                 <ChevronRight size={11} />
               </>
             )}
-            <span className="text-white/70">{company.name}</span>
+            <span className="text-white/70 truncate">{company.name}</span>
           </div>
 
-          <div className="flex flex-col md:flex-row items-start gap-6">
-            <div className="shrink-0">
-              {company.imageUrl ? (
-                <img src={company.imageUrl} alt={company.name} className="w-24 h-24 rounded-2xl object-cover ring-2 ring-white/10" />
-              ) : (
-                <div className="w-24 h-24 rounded-2xl bg-white/10 flex items-center justify-center ring-2 ring-white/10">
-                  <Building2 size={36} className="text-white/50" />
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                {company.category && (
-                  <span className="px-2.5 py-0.5 bg-white/10 rounded-full text-xs font-medium">{company.category.name}</span>
-                )}
-                {company.isVerified && (
-                  <span className="flex items-center gap-1 px-2.5 py-0.5 bg-green-500/20 text-green-300 rounded-full text-xs font-medium">
-                    <CheckCircle size={11} /> Verifie
-                  </span>
-                )}
-                {company.size && (
-                  <span className="px-2.5 py-0.5 bg-white/10 rounded-full text-xs font-medium">{company.size}</span>
+          <div className="flex flex-row md:flex-col md:items-start gap-4 md:gap-6">
+            <div className="flex items-start gap-3 md:gap-6 flex-1">
+              <div className="shrink-0">
+                {company.imageUrl ? (
+                  <img src={company.imageUrl} alt={company.name} className="w-16 h-16 md:w-24 md:h-24 rounded-2xl object-cover ring-2 ring-white/10" />
+                ) : (
+                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl bg-white/10 flex items-center justify-center ring-2 ring-white/10">
+                    <Building2 size={26} className="text-white/50" />
+                  </div>
                 )}
               </div>
 
-              <h1 className="text-3xl md:text-4xl font-black mb-3">{company.name}</h1>
-
-              <div className="flex flex-wrap items-center gap-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <StarDisplay rating={avg} size={20} />
-                  <span className="text-xl font-bold">{avg > 0 ? Number(avg).toFixed(1) : '—'}</span>
-                  <span className="text-white/50 text-sm">({reviews.length} avis)</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
+                  {company.category && (
+                    <span className="px-2 py-0.5 bg-white/10 rounded-full text-[10px] md:text-xs font-medium">{company.category.name}</span>
+                  )}
+                  {company.isVerified && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-300 rounded-full text-[10px] md:text-xs font-medium">
+                      <CheckCircle size={10} /> Vérifié
+                    </span>
+                  )}
                 </div>
-              </div>
 
-              {company.description && (
-                <p className="text-white/65 text-sm max-w-xl leading-relaxed mb-4">{company.description}</p>
-              )}
+                <h1 className="text-xl md:text-4xl font-black mb-2 md:mb-3 leading-tight">{company.name}</h1>
 
-              <div className="flex flex-wrap gap-3">
-                {company.ville && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-sm text-white/70">
-                    <MapPin size={13} />{company.ville}
+                <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-2 md:mb-4">
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <StarDisplay rating={avg} size={15} />
+                    <span className="text-base md:text-xl font-bold">{avg > 0 ? Number(avg).toFixed(1) : '—'}</span>
+                    <span className="text-white/50 text-xs md:text-sm">({reviews.length} avis)</span>
                   </div>
+                </div>
+
+                {company.description && (
+                  <p className="text-white/65 text-xs md:text-sm max-w-xl leading-relaxed mb-2 md:mb-4 line-clamp-2 md:line-clamp-none">{company.description}</p>
                 )}
-                {company.tel && (
-                  <a href={`tel:${company.tel}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-sm text-white/70 hover:text-white transition-colors">
-                    <Phone size={13} />{company.tel}
-                  </a>
-                )}
-                {company.activite && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-sm text-white/70">
-                    <Briefcase size={13} />{company.activite}
-                  </div>
-                )}
+
+                <div className="flex flex-wrap gap-2 md:gap-3">
+                  {company.ville && (
+                    <div className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full bg-white/10 text-xs md:text-sm text-white/70">
+                      <MapPin size={11} />{company.ville}
+                    </div>
+                  )}
+                  {company.tel && (
+                    <a href={`tel:${company.tel}`} className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs md:text-sm text-white/70 hover:text-white transition-colors">
+                      <Phone size={11} />{company.tel}
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -260,14 +254,14 @@ export default function CompanyPage() {
 
       {/* Main content */}
       <div className="bg-gray-50 min-h-screen">
-        <div className="max-w-6xl mx-auto px-4 py-10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-6xl mx-auto px-4 py-5 md:py-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-8">
 
             {/* Reviews column */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 md:space-y-6 order-2 lg:order-1">
               {reviews.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                  <h2 className="text-base font-bold text-gray-900 mb-5">Resume des avis</h2>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
+                  <h2 className="text-sm md:text-base font-bold text-gray-900 mb-4 md:mb-5">Résumé des avis</h2>
                   <div className="flex items-center gap-8">
                     <div className="text-center shrink-0">
                       <p className="text-5xl font-black text-gray-900 leading-none">{Number(avg).toFixed(1)}</p>
@@ -284,8 +278,8 @@ export default function CompanyPage() {
               )}
 
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100">
-                  <h2 className="text-base font-bold text-gray-900">
+                <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-gray-100">
+                  <h2 className="text-sm md:text-base font-bold text-gray-900">
                     Avis{reviews.length > 0 ? ` (${reviews.length})` : ''}
                   </h2>
                 </div>
@@ -299,7 +293,7 @@ export default function CompanyPage() {
                 ) : (
                   <div className="divide-y divide-gray-50">
                     {reviews.map((review) => (
-                      <div key={review.id} className="px-6 py-5">
+                      <div key={review.id} className="px-4 md:px-6 py-4 md:py-5">
                         <div className="flex items-start justify-between gap-4 mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-sm font-bold text-red-600 uppercase shrink-0">
@@ -346,7 +340,7 @@ export default function CompanyPage() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-5">
+            <div className="space-y-4 md:space-y-5 order-1 lg:order-2">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h2 className="text-base font-bold text-gray-900 mb-5">Votre avis</h2>
 
@@ -491,6 +485,7 @@ export default function CompanyPage() {
         </section>
       )}
 
+      <div className="md:hidden h-20" />
       <Foot />
     </>
   );
