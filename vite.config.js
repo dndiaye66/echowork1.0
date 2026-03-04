@@ -39,10 +39,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
-            // API calls: réseau d'abord, cache en fallback (5 min)
-            urlPattern: /\/api\//,
+            // API calls: réseau d'abord, cache en fallback (5 min) — hors routes OAuth
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth/google'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
