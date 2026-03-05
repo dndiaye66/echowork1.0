@@ -2,10 +2,13 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { SignupDto } from './dto/signup.dto';
@@ -66,6 +69,10 @@ export class AuthService {
     // Build user data
     const fullName = isCompany ? `${firstName!.trim()} ${lastName!.trim()}` : undefined;
 
+    // Generate email confirmation token
+    const emailToken = crypto.randomBytes(32).toString('hex');
+    const emailTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
     const user = await this.prisma.user.create({
       data: {
         username: username!,
@@ -73,12 +80,15 @@ export class AuthService {
         email,
         phone: phone?.trim() || null,
         profile: fullName ? { create: { fullName } } : undefined,
+        emailToken,
+        emailTokenExpiry,
       },
     });
 
-    // Send welcome email (async, don't wait for it)
-    this.emailService.sendWelcomeEmail(email, username!).catch((error) => {
-      this.logger.error('Failed to send welcome email', error);
+    // Send confirmation email (async)
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    this.emailService.sendConfirmationEmail(email, username!, emailToken, frontendUrl).catch((error) => {
+      this.logger.error('Failed to send confirmation email', error);
     });
 
     // Generate JWT token
@@ -226,5 +236,57 @@ export class AuthService {
       accessToken,
       user: { id: user.id, username: user.username, email: user.email, role: user.role },
     };
+  }
+
+  async confirmEmail(token: string) {
+    const user = await this.prisma.user.findFirst({ where: { emailToken: token } });
+    if (!user) throw new BadRequestException('Lien de confirmation invalide.');
+    if (user.emailTokenExpiry && user.emailTokenExpiry < new Date()) {
+      throw new BadRequestException('Lien de confirmation expiré. Veuillez vous réinscrire.');
+    }
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { isVerified: true, emailToken: null, emailTokenExpiry: null },
+    });
+    return { message: 'Email confirmé avec succès. Vous pouvez maintenant publier des avis.' };
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    // Always return the same message to avoid email enumeration
+    const response = { message: 'Si cet email est associé à un compte, un lien de réinitialisation a été envoyé.' };
+    if (!user) return response;
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken: token, resetTokenExpiry: expiry },
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    this.emailService.sendPasswordResetEmail(user.email, token, frontendUrl).catch((err) => {
+      this.logger.error('Failed to send reset email', err);
+    });
+
+    return response;
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 6) {
+      throw new BadRequestException('Le mot de passe doit contenir au moins 6 caractères.');
+    }
+    const user = await this.prisma.user.findFirst({ where: { resetToken: token } });
+    if (!user) throw new BadRequestException('Lien de réinitialisation invalide.');
+    if (user.resetTokenExpiry && user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('Lien de réinitialisation expiré. Veuillez refaire la demande.');
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword, resetToken: null, resetTokenExpiry: null },
+    });
+    return { message: 'Mot de passe réinitialisé avec succès. Vous pouvez vous connecter.' };
   }
 }

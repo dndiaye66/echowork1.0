@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   Star, ThumbsUp, ThumbsDown, MapPin, Phone,
-  Building2, ChevronRight, CheckCircle, AlertCircle, Briefcase,
+  Building2, ChevronRight, CheckCircle, AlertCircle, Mail,
 } from 'lucide-react';
 import Navbar from '../components/navbar';
 import Foot from '../components/Foot';
@@ -10,6 +10,7 @@ import { reviewService } from '../services/reviewService';
 import { companyService } from '../services/companyService';
 import { useVoting } from '../hooks/useVoting';
 import { useAuth } from '../contexts/AuthContext';
+import axios from '../api/Config';
 
 function StarDisplay({ rating, size = 16 }) {
   return (
@@ -81,6 +82,15 @@ export default function CompanyPage() {
   const [existingReview, setExistingReview] = useState(null);
 
   const { upvote, downvote, votingStates } = useVoting();
+  const [userVotes, setUserVotes] = useState({}); // { [reviewId]: 'LIKE' | 'DISLIKE' }
+
+  const fetchUserVotes = async (companyId) => {
+    if (!isAuthenticated) return;
+    try {
+      const res = await axios.get(`/reviews/user-votes?companyId=${companyId}`);
+      setUserVotes(res.data || {});
+    } catch {}
+  };
 
   useEffect(() => {
     if (!slug) return;
@@ -97,6 +107,8 @@ export default function CompanyPage() {
           if (user?.id) {
             const mine = reviewList.find((r) => r.user?.id === user.id);
             if (mine) setExistingReview(mine);
+            // Fetch user's votes for this company
+            fetchUserVotes(data.id);
           }
         }
       } catch {
@@ -116,6 +128,7 @@ export default function CompanyPage() {
       if (user?.id) {
         const mine = reviewList.find((r) => r.user?.id === user.id);
         setExistingReview(mine || null);
+        fetchUserVotes(data.id);
       }
     } catch {}
   };
@@ -150,6 +163,10 @@ export default function CompanyPage() {
       setTimeout(() => setSubmitStatus(null), 4000);
     } catch (err) {
       if (err.response?.status === 401) { navigate('/login', { state: { from: location.pathname } }); return; }
+      if (err.response?.status === 403) {
+        setSubmitStatus('unverified');
+        return;
+      }
       if (err.response?.status === 409) {
         // Already reviewed — switch to edit mode
         const reviewId = err.response.data?.reviewId;
@@ -166,10 +183,19 @@ export default function CompanyPage() {
   };
 
   const handleVote = async (reviewId, type) => {
+    if (!isAuthenticated) { navigate('/login', { state: { from: location.pathname } }); return; }
     try {
-      if (type === 'upvote') await upvote(reviewId);
-      else await downvote(reviewId);
-      await refreshReviews();
+      const result = type === 'upvote' ? await upvote(reviewId) : await downvote(reviewId);
+      // Update local vote state optimistically
+      if (result?.userVote !== undefined) {
+        setUserVotes((prev) => ({ ...prev, [reviewId]: result.userVote }));
+      }
+      // Update review counts in local state
+      if (result?.upvotes !== undefined) {
+        setReviews((prev) => prev.map((r) =>
+          r.id === reviewId ? { ...r, upvotes: result.upvotes, downvotes: result.downvotes } : r
+        ));
+      }
     } catch {}
   };
 
@@ -359,14 +385,22 @@ export default function CompanyPage() {
                           <button
                             onClick={() => handleVote(review.id, 'upvote')}
                             disabled={votingStates[review.id]}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-xs font-medium text-gray-500 hover:border-green-300 hover:text-green-600 hover:bg-green-50 transition-colors disabled:opacity-40"
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors disabled:opacity-40 ${
+                              userVotes[review.id] === 'LIKE'
+                                ? 'border-green-400 text-green-700 bg-green-50'
+                                : 'border-gray-200 text-gray-500 hover:border-green-300 hover:text-green-600 hover:bg-green-50'
+                            }`}
                           >
                             <ThumbsUp size={11} />{review.upvotes || 0}
                           </button>
                           <button
                             onClick={() => handleVote(review.id, 'downvote')}
                             disabled={votingStates[review.id]}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-xs font-medium text-gray-500 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors disabled:opacity-40 ${
+                              userVotes[review.id] === 'DISLIKE'
+                                ? 'border-red-400 text-red-700 bg-red-50'
+                                : 'border-gray-200 text-gray-500 hover:border-red-300 hover:text-red-600 hover:bg-red-50'
+                            }`}
                           >
                             <ThumbsDown size={11} />{review.downvotes || 0}
                           </button>
@@ -456,6 +490,12 @@ export default function CompanyPage() {
                     {submitStatus === 'updated' && (
                       <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5">
                         <CheckCircle size={14} /> Avis modifié avec succès !
+                      </div>
+                    )}
+                    {submitStatus === 'unverified' && (
+                      <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                        <Mail size={14} className="shrink-0 mt-0.5" />
+                        <span>Vous devez d'abord valider votre compte via l'email de confirmation envoyé.</span>
                       </div>
                     )}
                     {submitStatus === 'error' && (

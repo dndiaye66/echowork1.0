@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -24,6 +25,17 @@ export class ReviewsService {
 
   async create(userId: number, createReviewDto: CreateReviewDto) {
     try {
+      // Check user is verified
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { isVerified: true },
+      });
+      if (!user?.isVerified) {
+        throw new ForbiddenException(
+          'Vous devez d\'abord valider votre compte via l\'email de confirmation envoyé.',
+        );
+      }
+
       const company = await this.prisma.company.findUnique({
         where: { id: createReviewDto.companyId },
       });
@@ -140,28 +152,79 @@ export class ReviewsService {
     }
   }
 
-  async vote(id: number, type: 'upvote' | 'downvote') {
+  async vote(id: number, type: 'upvote' | 'downvote', userId: number) {
     try {
       const review = await this.prisma.review.findUnique({ where: { id } });
+      if (!review) throw new NotFoundException(`Review with ID ${id} not found`);
 
-      if (!review) {
-        throw new NotFoundException(`Review with ID ${id} not found`);
+      const voteType = type === 'upvote' ? 'LIKE' : 'DISLIKE';
+
+      const existing = await this.prisma.reviewVote.findUnique({
+        where: { userId_reviewId: { userId, reviewId: id } },
+      });
+
+      let upvotesDelta = 0;
+      let downvotesDelta = 0;
+      let userVote: string | null = null;
+
+      if (existing) {
+        if (existing.type === voteType) {
+          // Same vote → remove (toggle off)
+          await this.prisma.reviewVote.delete({
+            where: { userId_reviewId: { userId, reviewId: id } },
+          });
+          if (type === 'upvote') upvotesDelta = -1;
+          else downvotesDelta = -1;
+          userVote = null;
+        } else {
+          // Different vote → switch
+          await this.prisma.reviewVote.update({
+            where: { userId_reviewId: { userId, reviewId: id } },
+            data: { type: voteType },
+          });
+          if (type === 'upvote') { upvotesDelta = 1; downvotesDelta = -1; }
+          else { upvotesDelta = -1; downvotesDelta = 1; }
+          userVote = voteType;
+        }
+      } else {
+        // New vote
+        await this.prisma.reviewVote.create({
+          data: { userId, reviewId: id, type: voteType },
+        });
+        if (type === 'upvote') upvotesDelta = 1;
+        else downvotesDelta = 1;
+        userVote = voteType;
       }
 
-      const updateData =
-        type === 'upvote'
-          ? { upvotes: review.upvotes + 1 }
-          : { downvotes: review.downvotes + 1 };
-
-      return await this.prisma.review.update({
+      const updated = await this.prisma.review.update({
         where: { id },
-        data: updateData,
+        data: {
+          upvotes: { increment: upvotesDelta },
+          downvotes: { increment: downvotesDelta },
+        },
         include: { user: { select: userSelect } },
       });
+
+      return { ...updated, userVote };
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
       this.logger.error(`Failed to vote on review ${id}`, error);
       throw new InternalServerErrorException('Failed to vote on review');
+    }
+  }
+
+  async getUserVotesForCompany(userId: number, companyId: number) {
+    try {
+      const votes = await this.prisma.reviewVote.findMany({
+        where: { userId, review: { companyId } },
+        select: { reviewId: true, type: true },
+      });
+      const result: Record<number, string> = {};
+      for (const v of votes) result[v.reviewId] = v.type;
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to get user votes for company ${companyId}`, error);
+      throw new InternalServerErrorException('Failed to get user votes');
     }
   }
 

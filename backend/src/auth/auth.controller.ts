@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Body,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -58,5 +59,25 @@ export class AuthController {
       user: JSON.stringify(result.user),
     });
     res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+  }
+
+  /** GET /api/auth/confirm-email?token=xxx */
+  @Get('confirm-email')
+  async confirmEmail(@Query('token') token: string) {
+    return this.authService.confirmEmail(token);
+  }
+
+  /** POST /api/auth/forgot-password */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() body: { email: string }) {
+    return this.authService.forgotPassword(body.email);
+  }
+
+  /** POST /api/auth/reset-password */
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() body: { token: string; password: string }) {
+    return this.authService.resetPassword(body.token, body.password);
   }
 }

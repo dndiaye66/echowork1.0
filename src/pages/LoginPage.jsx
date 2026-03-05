@@ -120,6 +120,9 @@ function LoginPage() {
                 <label className="block text-sm font-medium text-base-content">
                   Mot de passe
                 </label>
+                <Link to="/forgot-password" className="text-xs text-base-content/50 hover:text-secondary hover:underline underline-offset-2 transition-colors">
+                  Mot de passe oublié ?
+                </Link>
               </div>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />

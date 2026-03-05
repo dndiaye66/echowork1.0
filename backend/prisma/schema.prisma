@@ -56,21 +56,31 @@ enum AdvertisementStatus {
   ENDED
 }
 
+enum VoteType {
+  LIKE
+  DISLIKE
+}
+
 model User {
-  id             Int           @id @default(autoincrement())
-  username       String        @unique
-  email          String        @unique
-  phone          String?
-  password       String        @default("")
-  googleId       String?       @unique
-  role           UserRole      @default(USER)
-  isVerified     Boolean       @default(false)
-  isBlocked      Boolean       @default(false)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  reviews        Review[]
-  profile        UserProfile?
-  claimedCompanies Company[]
+  id                Int           @id @default(autoincrement())
+  username          String        @unique
+  email             String        @unique
+  phone             String?
+  password          String        @default("")
+  googleId          String?       @unique
+  role              UserRole      @default(USER)
+  isVerified        Boolean       @default(false)
+  isBlocked         Boolean       @default(false)
+  emailToken        String?
+  emailTokenExpiry  DateTime?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  reviews           Review[]
+  votes             ReviewVote[]
+  profile           UserProfile?
+  claimedCompanies  Company[]
 
   @@index([username])
   @@index([email])
@@ -182,6 +192,7 @@ model Review {
   upvotes   Int           @default(0)
   downvotes Int           @default(0)
   scores    ReviewScore[]
+  votes     ReviewVote[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -266,6 +277,20 @@ model Subscription {
   @@index([plan])
   @@index([isActive])
   @@index([endDate])
+}
+
+model ReviewVote {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  reviewId  Int
+  type      VoteType
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reviewId])
+  @@index([userId])
+  @@index([reviewId])
 }
 
 model Advertisement {

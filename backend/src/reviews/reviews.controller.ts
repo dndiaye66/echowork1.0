@@ -48,22 +48,34 @@ export class ReviewsController {
     return this.reviewsService.findByCompany(companyId, ratingNumber);
   }
 
+  /** GET /api/reviews/user-votes?companyId=X (auth required) — must be before :id */
+  @Get('user-votes')
+  @UseGuards(JwtAuthGuard)
+  async getUserVotes(
+    @Request() req: any,
+    @Query('companyId', ParseIntPipe) companyId: number,
+  ) {
+    return this.reviewsService.getUserVotesForCompany(req.user.id, companyId);
+  }
+
   /** GET /api/reviews/:id */
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.reviewsService.findOne(id);
   }
 
-  /** POST /api/reviews/:id/upvote */
+  /** POST /api/reviews/:id/upvote (auth required) */
   @Post(':id/upvote')
-  async upvote(@Param('id', ParseIntPipe) id: number) {
-    return this.reviewsService.vote(id, 'upvote');
+  @UseGuards(JwtAuthGuard)
+  async upvote(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.reviewsService.vote(id, 'upvote', req.user.id);
   }
 
-  /** POST /api/reviews/:id/downvote */
+  /** POST /api/reviews/:id/downvote (auth required) */
   @Post(':id/downvote')
-  async downvote(@Param('id', ParseIntPipe) id: number) {
-    return this.reviewsService.vote(id, 'downvote');
+  @UseGuards(JwtAuthGuard)
+  async downvote(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.reviewsService.vote(id, 'downvote', req.user.id);
   }
 
   /** DELETE /api/reviews/:id (auth required) */

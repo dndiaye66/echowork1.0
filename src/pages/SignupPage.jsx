@@ -4,12 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from '../api/Config';
 import {
   Eye, EyeOff, User, Mail, Lock, CheckCircle2, ArrowRight,
-  Star, Building2, UserCircle2, Phone, Sparkles, PartyPopper,
+  Star, Building2, Phone, Sparkles,
 } from 'lucide-react';
 
 /* ── Welcome modal shown after successful signup ── */
 function WelcomeModal({ username, onClose }) {
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(15);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -31,39 +31,38 @@ function WelcomeModal({ username, onClose }) {
 
         {/* Red gradient top */}
         <div className="bg-gradient-to-br from-red-600 to-red-700 px-8 pt-10 pb-16 text-center text-white relative overflow-hidden">
-          {/* Decorative circles */}
           <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10" />
           <div className="absolute -bottom-4 -left-6 w-24 h-24 rounded-full bg-white/10" />
 
-          {/* Star icon */}
           <div className="relative z-10 flex justify-center mb-4">
             <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center border border-white/30 shadow-xl">
               <Star size={40} className="text-white" fill="currentColor" />
             </div>
           </div>
 
-          <h2 className="relative z-10 text-3xl font-extrabold mb-1">Bienvenue !</h2>
-          <p className="relative z-10 text-white/80 text-lg">
-            Content de t'avoir avec nous, <span className="font-bold text-white">@{username}</span> 🎉
+          <h2 className="relative z-10 text-3xl font-extrabold mb-1">Bienvenue sur EchoWork !</h2>
+          <p className="relative z-10 text-white/80 text-base">
+            Bonjour <span className="font-bold text-white">@{username}</span> 🎉
           </p>
         </div>
 
         {/* White bottom content */}
         <div className="px-8 py-6 -mt-8 relative">
-          <div className="bg-white rounded-2xl shadow-lg p-5 mb-5">
-            <p className="text-gray-700 text-sm leading-relaxed text-center">
-              Ton compte EchoWork est prêt. Tu peux maintenant noter des entreprises,
-              partager tes expériences et aider des milliers de Sénégalais à faire
-              les meilleurs choix.
-            </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5">
+            <div className="flex items-start gap-3">
+              <Mail size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-amber-800 text-sm leading-relaxed">
+                <strong>Un email de confirmation vous a été envoyé.</strong> Veuillez vérifier
+                votre boîte mail pour activer votre compte et pouvoir publier des avis.
+              </p>
+            </div>
           </div>
 
-          {/* Features */}
           <ul className="space-y-2 mb-6">
             {[
-              'Donne ton avis sur les entreprises',
-              'Consulte des milliers d\'avis vérifiés',
-              'Découvre les meilleures entreprises',
+              'Consultez des milliers d\'avis vérifiés',
+              'Découvrez les meilleures entreprises',
+              'Notez dès que votre compte est activé',
             ].map((feat) => (
               <li key={feat} className="flex items-center gap-2 text-sm text-gray-600">
                 <CheckCircle2 size={16} className="text-red-500 shrink-0" />
@@ -77,7 +76,7 @@ function WelcomeModal({ username, onClose }) {
             className="btn btn-primary w-full gap-2 rounded-xl"
           >
             <Sparkles size={16} />
-            Commencer à explorer
+            Continuer
             <span className="ml-auto bg-white/20 rounded-full text-xs px-2 py-0.5">{countdown}s</span>
           </button>
         </div>

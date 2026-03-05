@@ -17,6 +17,9 @@ import ReviewsModeration from "./pages/admin/ReviewsModeration";
 import CategoriesManagement from "./pages/admin/CategoriesManagement";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import AuthCallback from "./pages/AuthCallback";
+import ConfirmEmailPage from "./pages/ConfirmEmailPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
   return (
@@ -30,6 +33,9 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* ── Admin (ADMIN role only) ── */}
           <Route

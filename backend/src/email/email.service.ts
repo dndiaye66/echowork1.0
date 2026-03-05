@@ -48,6 +48,68 @@ export class EmailService {
     return text.replace(/[&<>"']/g, (m) => map[m]);
   }
 
+  async sendConfirmationEmail(email: string, username: string, token: string, frontendUrl: string): Promise<void> {
+    try {
+      const safeUsername = this.escapeHtml(username);
+      const confirmUrl = `${frontendUrl}/confirm-email?token=${token}`;
+      const info = await this.transporter.sendMail({
+        from: process.env.EMAIL_FROM || '"EchoWork" <noreply@echowork.com>',
+        to: email,
+        subject: 'Confirmez votre adresse email — EchoWork',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #dc2626;">Confirmez votre email</h1>
+            <p>Bonjour <strong>${safeUsername}</strong>,</p>
+            <p>Merci de vous être inscrit sur EchoWork ! Pour activer votre compte et publier des avis, cliquez sur le bouton ci-dessous :</p>
+            <p style="margin: 30px 0; text-align: center;">
+              <a href="${confirmUrl}" style="background-color: #dc2626; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                Confirmer mon email
+              </a>
+            </p>
+            <p style="color: #6b7280; font-size: 13px;">Ce lien expire dans 24 heures. Si vous n'avez pas créé de compte, ignorez ce message.</p>
+            <p style="color: #9ca3af; font-size: 12px;">Lien : ${confirmUrl}</p>
+          </div>`,
+        text: `Bonjour ${username},\n\nConfirmez votre email EchoWork : ${confirmUrl}\n\nCe lien expire dans 24 heures.`,
+      });
+      this.logger.log(`Confirmation email sent to ${email}. ID: ${info.messageId}`);
+      if (!process.env.SMTP_HOST || process.env.SMTP_HOST === 'smtp.ethereal.email') {
+        this.logger.log(`Preview: ${nodemailer.getTestMessageUrl(info)}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send confirmation email to ${email}: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  async sendPasswordResetEmail(email: string, token: string, frontendUrl: string): Promise<void> {
+    try {
+      const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+      const info = await this.transporter.sendMail({
+        from: process.env.EMAIL_FROM || '"EchoWork" <noreply@echowork.com>',
+        to: email,
+        subject: 'Réinitialisation de votre mot de passe — EchoWork',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #dc2626;">Réinitialiser votre mot de passe</h1>
+            <p>Vous avez demandé la réinitialisation de votre mot de passe EchoWork.</p>
+            <p style="margin: 30px 0; text-align: center;">
+              <a href="${resetUrl}" style="background-color: #dc2626; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                Réinitialiser mon mot de passe
+              </a>
+            </p>
+            <p style="color: #6b7280; font-size: 13px;">Ce lien expire dans 1 heure. Si vous n'avez pas fait cette demande, ignorez ce message.</p>
+            <p style="color: #9ca3af; font-size: 12px;">Lien : ${resetUrl}</p>
+          </div>`,
+        text: `Réinitialisez votre mot de passe EchoWork : ${resetUrl}\n\nCe lien expire dans 1 heure.`,
+      });
+      this.logger.log(`Reset email sent to ${email}. ID: ${info.messageId}`);
+      if (!process.env.SMTP_HOST || process.env.SMTP_HOST === 'smtp.ethereal.email') {
+        this.logger.log(`Preview: ${nodemailer.getTestMessageUrl(info)}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send reset email to ${email}: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
   /**
    * Send welcome email to newly registered user
    * @param email - User's email address
