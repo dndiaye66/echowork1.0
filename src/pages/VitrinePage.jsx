@@ -236,7 +236,7 @@ export default function VitrinePage() {
           </div>
 
           <h1 className="text-3xl md:text-5xl font-black leading-tight mb-3 md:mb-4">
-            Notez les entreprises et{' '}
+            ⭐ Notez les entreprises et{' '}
             <span className="text-red-400">partagez vos expériences</span>{' '}
             avec la communauté
           </h1>
