@@ -235,16 +235,16 @@ export default function VitrinePage() {
             La plateforme de confiance au Sénégal
           </div>
 
-          <h1 className="text-3xl md:text-6xl font-black leading-tight mb-3 md:mb-4">
-            La voix des{' '}
-            <span className="text-red-500">Sénégalais</span>
+          <h1 className="text-3xl md:text-5xl font-black leading-tight mb-3 md:mb-4">
+            Notez les entreprises et{' '}
+            <span className="text-red-400">partagez vos expériences</span>{' '}
+            avec la communauté
           </h1>
           <p className="hidden md:block text-lg md:text-xl text-white/75 mb-10 max-w-xl mx-auto leading-relaxed">
-            Notez les entreprises, partagez vos expériences et aidez la communauté
-            à faire les meilleurs choix.
+            Exprimez-vous en toute transparence et responsabilité pour aider les autres à faire les bons choix.
           </p>
           <p className="md:hidden text-sm text-white/70 mb-6 max-w-xs mx-auto leading-relaxed">
-            Notez et découvrez les entreprises sénégalaises
+            Exprimez-vous et aidez la communauté à faire les bons choix
           </p>
 
           <div className="max-w-lg mx-auto">
@@ -373,7 +373,8 @@ export default function VitrinePage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Classement national</p>
-                  <h2 className="text-xl font-black text-gray-900">Top 10 entreprises</h2>
+                  <h2 className="text-xl font-black text-gray-900">🏆 Les entreprises les plus appréciées</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">Les entreprises qui offrent les meilleures expériences selon les utilisateurs.</p>
                 </div>
               </div>
 
@@ -410,8 +411,9 @@ export default function VitrinePage() {
                     <TrendingDown size={20} className="text-red-600" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">À surveiller</p>
-                    <h2 className="text-lg font-black text-gray-900">En baisse</h2>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Axes d'amélioration</p>
+                    <h2 className="text-lg font-black text-gray-900">📊 Expériences à améliorer</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">Les entreprises pour lesquelles les utilisateurs ont signalé des axes d'amélioration.</p>
                   </div>
                 </div>
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
